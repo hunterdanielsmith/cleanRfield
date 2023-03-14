@@ -1,6 +1,11 @@
 rm(list=ls())
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
-# devtools::install_github("hunterdanielsmith/cleanRfieldNew")
+# devtools::install_github("hunterdanielsmith/cleanRfield")
+
+###################
+### cleanRfield ###
+###################
+
 library(cleanRfield)
 library(terra)
 
@@ -186,7 +191,7 @@ n.core<-3
 cl <- makeCluster(n.core, output = "") 
 registerDoParallel(cl) 
 Filtered_Field <-foreach(i = 1:length(field),  
-                         .packages = c("terra","cleanRfieldNew")) %dopar% { 
+                         .packages = c("terra","cleanRfield")) %dopar% { 
                            
                            # Uploading data and boundary 
                            F.ex<-vect(paste("./field/",field[i],".shp",sep="")) 

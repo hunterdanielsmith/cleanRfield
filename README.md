@@ -6,7 +6,7 @@
 > This tutorial assumes that readers have a basic understanding of spatial data, including projections and coordinate reference systems. If you need a refresher on this topic, we recommend reading [this blog post for deciding between projected and unprojected data](https://spatiallychallenged.com/2018/11/01/selecting-a-projection-for-spatial-analysis/) and [this post for understanding the basics of coordinate reference systems](https://spatiallychallenged.com/2018/11/05/epsg-numbers-and-coordinate-reference-systems/). 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/hunterdanielsmith/cleanRfield/images/CleanRField_large.jpg" width="40%" height="40%">
+  <img src="https://raw.githubusercontent.com/filipematias23/images/master/readme/CleanRField_large.jpg" width="40%" height="40%">
 </p>
 
 <div id="menu" />
@@ -49,7 +49,7 @@ devtools::install_github("filipematias23/cleanRfield")
 <br />
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/hunterdanielsmith/cleanRfield/images/rstudio_view.png">
+  <img src="https://raw.githubusercontent.com/filipematias23/images/master/readme/cleanRfield_R.jpg">
 </p>
 
 <br />
@@ -83,10 +83,10 @@ library(cleanRfield)
 
 par(mfrow=c(1,2))
 
-EX1<-readOGR("EX1.shp")
+EX1<-vect("EX1/EX1.shp")
 plot(EX1, main="Data Point")
 
-EX1.Shape<-readOGR("EX1_boundary.shp")
+EX1.Shape<-vect("EX1_boundary/EX1_boundary.shp")
 plot(EX1.Shape, main="Field Boundary")
 
 par(mfrow=c(1,1))
@@ -105,7 +105,7 @@ par(mfrow=c(1,1))
 > Users can subset the data by drawing boundaries around a field or subset of fields. Function **`cropField`**. Depending on your computer and the size of your data set, this step may take a few seconds. 
 
 ```r
-# "Use cursor to select 4 points around of polygon (1) in the plots window."
+# "Use cursor to select 4 points around polygon (1) in the plots window."
 EX1.C<-cropField(field = EX1, nPolygon = 1, nPoint = 4)
 ```
 
@@ -144,7 +144,7 @@ EX1.C1<-cropField(field = EX1, shape = EX1.Shape)
 ```r
 #Open an extra plot window 
 x11() 
-# "Use cursor to select 4 points around of polygon (1) in the plots window."
+# "Use cursor to select 4 points around polygon (1) in the plots window."
 EX1.C<-cropField(field = EX1, nPolygon = 1, nPoint = 4)
 ```
 
@@ -196,8 +196,8 @@ EX1.S<-sampleField(field = EX1,shape = EX1.Shape, size = 0.1)
 > Function **`rasterField`**.Data points can be used to create raster files. Use either the provided code for unprojected data or projected data-- you will not need to run both sets of code. Any positive number can be chosen as the resolution, but choosing too high of a resolution will result in a raster file that oversimplifies the shape of the field, and choosing too low of a resolution can cause the runtime to be to long and/or cause the parts of the field between combine passes to be excluded from the final field shape. 
 
 ```r
-# Check projection to observe '+units=':
-projection(EX1)
+# Check projection to observe 'LENGTHUNIT': 
+crs(EX1)
 
 # Unprojected Data (non or NA): use resolution around 0.00008 to create a raster for "Dry_Yield":
 EX1.R<-rasterField(field = EX1,
@@ -264,17 +264,18 @@ par(mfrow=c(1,1))
 
 > Users can manually draw field boundaries or use the raster layer to draw field boundaries automatically. Function **`boundaryField`**. 
 
-* **Automatic - a raster layer is necessary for drawing the boundary automatically, which is the fastest method (use function **`rasterField`** before).**
+* **Automatic - a raster layer is necessary for drawing the boundary automatically, which is the fastest method (use function **`rasterField`** before). Increasing the tolerance parameter simplifies the geometry of complex boundaries.**
 
 ```r
-EX1.P<-boundaryField(field = EX1.R$Dry_Yield)
+EX1.P<-boundaryField(field = EX1.R$Dry_Yield, tolerance = 0.0004) # Yield data did not capture borders of field  
+EX1.P<-boundaryField(field = EX1.R$Speed) # Speed data has defined field borders, we use default tolerance
 ```
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/filipematias23/images/master/readme/filter12.jpg" width="70%" height="70%">
 </p>
 
-* **Manually - use your cursor to make points around the field boundary and press ESC when it is done (use the paramter `draw = TRUE`).**
+* **Manually - use your cursor to make points around the field boundary and press ESC when it is done (use the parameter `draw = TRUE`).**
 
 ```r
 EX1.P<-boundaryField(field = EX1, draw = TRUE)
@@ -316,11 +317,6 @@ EX1.P3<-boundaryField(field = EX1, draw = T)
 * **Combining fields on the same shapefile:**
 
 ```r
-# Giving names to each field:
-EX1.P1@data<-data.frame(Field=c(1))
-EX1.P2@data<-data.frame(Field=c(2))
-EX1.P3@data<-data.frame(Field=c(3))
-
 # Combining field on the same shapefile:
 EX1.P<-rbind(EX1.P1,EX1.P2,EX1.P3)
 plot(EX1.P)
@@ -344,8 +340,8 @@ plot(EX1.P)
 * Only shapefile:
 
 ```r
-# Check projection to observe '+units=':
-projection(EX1.Shape)
+# Check projection to observe 'LENGTHUNIT': 
+crs(EX1)
 
 # Unprojected Data (e.g., non or NA): buffer of -0.0001:
 EX1.B<-bufferField(shape = EX1.Shape,value = -0.0001)
@@ -552,11 +548,11 @@ n.core<-3
 cl <- makeCluster(n.core, output = "")
 registerDoParallel(cl)
 Filtered_Field <-foreach(i = 1:length(field), 
-                         .packages = c("raster","cleanRfield","rgdal")) %dopar% {
+                         .packages = c("terra","cleanRfield")) %dopar% {
                                
                                # Uploading data and boundary
-                               F.ex<-readOGR(paste("./field/",field[i],".shp",sep=""))
-                               B.ex<-readOGR(paste("./boundary/",boundary[i],".shp",sep=""))
+                                F.ex<-vect(paste("./field/",field[i],".shp",sep="")) 
+                                B.ex<-vect(paste("./boundary/",boundary[i],".shp",sep="")) 
                                
                                # Filtering the borders by buffering the boundary shape file:
                                B.ex<-bufferField(shape = B.ex,value = buffer)
@@ -575,14 +571,15 @@ Filtered_Field <-foreach(i = 1:length(field),
                                                value = sd.value)
                                
                                # New filtered data and boundary files:
-                               return(list(NewField=F.ex, NewBoundary=B.ex))
+                               return(list(NewField=wrap(F.ex), NewBoundary=wrap(B.ex)))
                              }
 
 stopCluster(cl)
 names(Filtered_Field)<-field
 
 # Output
-Filtered_Field
+Filtered_Field <-lapply(unlist(Filtered_Field), unwrap)
+Flltered_Field
 
 ```
 
@@ -592,8 +589,8 @@ Filtered_Field
 
 ```r
 # New filtered - EX2_center
-plot(Filtered_Field$EX2_center$NewBoundary, main="EX2_center")
-plot(Filtered_Field$EX2_center$NewField, add=T, col="gold4",pch=20,cex=0.5)
+plot(Filtered_Field$EX2_center.NewBoundary, main="EX2_center") 
+plot(Filtered_Field$EX2_center.NewField, add=T, col="gold4",pch=20,cex=0.5) 
 
 ```
 
@@ -603,8 +600,8 @@ plot(Filtered_Field$EX2_center$NewField, add=T, col="gold4",pch=20,cex=0.5)
 
 ```r
 # New filtered - EX2_north
-plot(Filtered_Field$EX2_north$NewBoundary, main="EX2_north")
-plot(Filtered_Field$EX2_north$NewField, add=T, col="gold4",pch=20,cex=2)
+plot(Filtered_Field$EX2_north.NewBoundary, main="EX2_north") 
+plot(Filtered_Field$EX2_north.NewField, add=T, col="gold4",pch=20,cex=2) 
 
 ```
 
@@ -614,8 +611,8 @@ plot(Filtered_Field$EX2_north$NewField, add=T, col="gold4",pch=20,cex=2)
 
 ```r
 # New filtered - EX2_south
-plot(Filtered_Field$EX2_south$NewBoundary, main="EX2_south")
-plot(Filtered_Field$EX2_south$NewField, add=T, col="gold4",pch=20,cex=1)
+plot(Filtered_Field$EX2_south.NewBoundary, main="EX2_south") 
+plot(Filtered_Field$EX2_south.NewField, add=T, col="gold4",pch=20,cex=1) 
 
 ```
 
@@ -625,19 +622,19 @@ plot(Filtered_Field$EX2_south$NewField, add=T, col="gold4",pch=20,cex=1)
 
 ```r
 # Combined new data:
-NewField<-rbind(Filtered_Field$EX2_center$NewField,
-                Filtered_Field$EX2_north$NewField,
-                Filtered_Field$EX2_south$NewField)
+NewField<-rbind(Filtered_Field$EX2_center.NewField, 
+                Filtered_Field$EX2_north.NewField, 
+                Filtered_Field$EX2_south.NewField) 
 
 # Giving names to each field:
-Filtered_Field$EX2_center$NewBoundary$ID<-field[1]
-Filtered_Field$EX2_north$NewBoundary$ID<-field[2]
-Filtered_Field$EX2_south$NewBoundary$ID<-field[3]
+Filtered_Field$EX2_center.NewBoundary$ID<-field[1] 
+Filtered_Field$EX2_north.NewBoundary$ID<-field[2] 
+Filtered_Field$EX2_south.NewBoundary$ID<-field[3] 
 
 # Combining field on the same shape file:
-NewBoundary<-rbind(Filtered_Field$EX2_center$NewBoundary,
-                Filtered_Field$EX2_north$NewBoundary,
-                Filtered_Field$EX2_south$NewBoundary)
+NewBoundary<-rbind(Filtered_Field$EX2_center.NewBoundary, 
+                   Filtered_Field$EX2_north.NewBoundary, 
+                   Filtered_Field$EX2_south.NewBoundary) 
 
 plot(NewBoundary, main="EX2_full")
 plot(NewField, add=T, col="gold4",pch=20,cex=0.5)
@@ -660,10 +657,10 @@ plot(NewField, add=T, col="gold4",pch=20,cex=0.5)
 
 ```r
 # Make a very basic plot where brighter colors denote higher yield
-spplot(EX1, "Dry_Yield") 
+terra::plot(EX1, "Dry_Yield")
 
 #Adjusting cuts changes the number of categories in the legend
-spplot(EX1, "Dry_Yield", cuts=6) 
+terra::plot(EX1, "Dry_Yield", breaks=6)  
 ```
 
 <p align="center">
@@ -675,20 +672,20 @@ spplot(EX1, "Dry_Yield", cuts=6)
 ```r 
 #convert the object EX1 into an sf object named EX1sf
 library(sf)
-EX1sf<-st_as_sf(EX1, geometry= pts) 
+EX1sf<-st_as_sf(EX1) 
 
 #plot the data using geom_sf and the ggplot2 default color gradient
 library(ggplot2)
 ggplot()+
-geom_sf(data=EX1sf, aes(color= Dry_Yield))+ 
-theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  geom_sf(data=EX1sf, aes(color= Dry_Yield))+ 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 #or make a figure using fewer of the ggplot2 display defaults
 EX1.F10<-filterField(field = EX1,  #filtering with Dry_Yield>10 to create a different example for plotting data
                    trait = "Dry_Yield",
                    value = 10,
                    cropAbove = T) 
-EX1sf10<-st_as_sf(EX1.F10, geometry= pts) #converting the object EX1.F10 into an sf object
+EX1sf10<-st_as_sf(EX1.F10) #converting the object EX1.F10 into an sf object
 ggplot() + 
   geom_sf(data = EX1sf10, aes(color = Dry_Yield), size = 0.01) + #made the individual points smaller
   scale_color_gradient(low = "yellow2", high = "green4") + #created a different color gradient
@@ -714,16 +711,11 @@ ggplot() +
 * This example code uses the function `writeOGR()` from the **rgdal** package to save "SpatialPointsDataFrames" and the function `shapefile` from the **raster** package to save "SpatialPolygon" objects. 
 
 ```r
-library(rgdal)
+library(terra)
 
 # New filtered data (SpatialPointsDataFrames):
-writeOGR(EX1.B$newField, ".", "EX1.newField", driver="ESRI Shapefile")
-EX1.newField <- readOGR("EX1.newField.shp") # Reading the saved data points.
-
-# New boundary or shape (SpatialPolygonsDataFrame):
-shapefile(x=EX1.B$newShape, file= "EX1.newShape") # Writing the shapefile using a function from raster
-EX1.newShape <- readOGR("EX1.newShape.shp") # Reading the saved shapefile.
-
+writeVector(EX1.B$newField, "EX1.newField.shp", filetype="ESRI Shapefile") 
+EX1.newField <- vect("EX1.newField.shp") # Reading the saved data points. 
 ```
 [Menu](#menu)
 
@@ -738,7 +730,7 @@ EX1.newShape <- readOGR("EX1.newShape.shp") # Reading the saved shapefile.
 Download the example: [EX3.csv](https://drive.google.com/file/d/1lIpsKyU-Xzcd0Hg-j7eo4J14NF4iy0wS/view?usp=sharing)
 
 ```r
-library(rgdal)
+library(terra)
 
 # reading in the .csv file
 DF<-read.csv("EX3.csv")
@@ -748,10 +740,8 @@ colnames(DF) #checking that the latitude is the first column and longitude is th
 xy <- DF[,c(1,2)]
 
 # creating a new spatial points data frame from the data in DF
-SpatialDF <- SpatialPointsDataFrame(coords = xy, data = DF,
-                               proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
-
-
+SpatialDF <- vect(DF, geom=c('Long','Lat'), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+crs(SpatialDF)
 ```
 
 [Menu](#menu)
@@ -769,18 +759,18 @@ SpatialDF <- SpatialPointsDataFrame(coords = xy, data = DF,
 
 ```r
 #### packages to run basic filtering with cleanRfield ####
-library(raster)
-library(rgdal)
+library(terra)
 library(cleanRfield)
 
 #### additional packages needed for interpolation & mapping ####
 library(gstat) # used to make the idw model
+library(sf) # used to convert spatial objects
 library(sp) # used to prepare the raster grid with spsample function
 library(tmap) # used for visualization
 
 #### preparing the yield data ####
-EX1 <- readOGR("EX1.shp") # EX1.shp download link is in tutorial section 1
-EX1.Shape <- readOGR("EX1_boundary.shp") #EX1_boundary.shp download link is in tutorial section 1 
+EX1 <- vect("EX1/EX1.shp") # EX1.shp download link is in tutorial section 1 
+EX1.Shape <- vect("EX1_boundary/EX1_boundary.shp") #EX1_boundary.shp download link is in tutorial section 1  
 
 # filtering data to remove biologically unlikely soybean yield observations and NA values
 EX1.F <- filterField(field = EX1,
@@ -789,12 +779,12 @@ EX1.F <- filterField(field = EX1,
                    cropAbove = c(T,F)) 
                    
 # transforming the filtered data so that it is a projected CRS
-EX1_merc <- spTransform(EX1.F, CRS=CRS("+proj=merc +ellps=GRS80"))
-summary(EX1_merc) # looking at summary output to check projection
+EX1_merc <- spTransform(as_Spatial(st_as_sf(EX1.F)), CRS=CRS("+proj=merc +ellps=GRS80")) 
+EX1_merc # looking at summary output to check projection 
 
 #transforming the boundary too-- this will be used later for visualization
-EX1.Shape_merc <- spTransform(EX1.Shape, CRS=CRS("+proj=merc +ellps=GRS80"))
-summary(EX1.Shape_merc) #looking at summary output to check projection
+EX1.Shape_merc <- spTransform(as_Spatial(st_as_sf(EX1.Shape)), CRS=CRS("+proj=merc +ellps=GRS80")) 
+EX1.Shape_merc #looking at summary output to check projection 
 
 #### preparing an empty grid ####
 G <- as.data.frame(spsample(EX1_merc, "regular", n=50000)) #n = total number of grid cells
@@ -828,18 +818,18 @@ yieldmap.idw #view the map
 
 ```r
 #### packages to run basic filtering with cleanRfield ####
-library(raster)
-library(rgdal)
+library(terra)
 library(cleanRfield)
 
 #### additional packages needed for interpolation & mapping ####
 library(gstat) # used to make the idw model
+library(sf) # used to convert spatial objects
 library(sp) # used to prepare the raster grid with spsample function
 library(tmap) # used for visualization
 
 #### preparing the yield data ####
-EX1 <- readOGR("EX1.shp") # EX1.shp download link is in tutorial section 1
-EX1.Shape <- readOGR("EX1_boundary.shp") #EX1_boundary.shp download link is in tutorial section 1 
+EX1 <- vect("EX1/EX1.shp") # EX1.shp download link is in tutorial section 1 
+EX1.Shape <- vect("EX1_boundary/EX1_boundary.shp") #EX1_boundary.shp download link is in tutorial section 1  
 
 # filtering data to remove biologically unlikely soybean yield observations and NA values
 EX1.F <- filterField(field = EX1,
@@ -848,12 +838,12 @@ EX1.F <- filterField(field = EX1,
                      cropAbove = c(T,F)) 
 
 # transforming the filtered data so that it is a projected CRS
-EX1_merc <- spTransform(EX1.F, CRS=CRS("+proj=merc +ellps=GRS80"))
-summary(EX1_merc) # looking at summary output to check projection
+EX1_merc <- spTransform(as_Spatial(st_as_sf(EX1.F)), CRS=CRS("+proj=merc +ellps=GRS80")) 
+EX1_merc # looking at summary output to check projection 
 
 # transforming the boundary too-- this will be used later for visualization
-EX1.Shape_merc <- spTransform(EX1.Shape, CRS=CRS("+proj=merc +ellps=GRS80"))
-summary(EX1.Shape_merc) #looking at summary output to check projection
+EX1.Shape_merc <- spTransform(as_Spatial(st_as_sf(EX1.Shape)), CRS=CRS("+proj=merc +ellps=GRS80")) 
+EX1.Shape_merc #looking at summary output to check projection 
 
 #### make a variogram to assess spatial relationships between yield observations ####
 v_overall <- variogram(Dry_Yield~1, data = EX1_merc) 
@@ -919,8 +909,8 @@ summary(kriged_surface)
 
 ```r
 #### visualizing kriged map ####
-kriged_raster <- raster(kriged_surface)
-kriged_masked    <- mask(kriged_raster, EX1.Shape_merc)
+kriged_raster <- raster::raster(kriged_surface)
+kriged_masked <- raster::mask(kriged_raster, EX1.Shape_merc)
 
 tm_shape(kriged_masked) + 
   tm_raster(n=10,palette = "YlGn", 
@@ -964,6 +954,7 @@ tm_shape(kriged_masked) +
 
 > * [Filipe Inacio Matias](https://github.com/filipematias23)
 > * [Emma Matcham](https://mobile.twitter.com/egmatcham)
+> * [Hunter Smith](https://www.linkedin.com/in/hunterdanielsmith/)
 
 <br />
 

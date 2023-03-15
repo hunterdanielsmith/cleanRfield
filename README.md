@@ -69,7 +69,7 @@ library(terra)
 library(cleanRfield)
 ```
 
-> Start this tutorial by downloading the example EX1 [here](https://drive.google.com/file/d/1FTdbrp-_SE81vUoQv4wBsqVGqkUUUaPR/view?usp=sharing) and the field boundary [here](https://drive.google.com/file/d/1pP41HiG2RxF7HOu_5fdj6Pg9DoTaLPcy/view?usp=sharing). This tutorial will use the function *`readOGR()`* from package **rgdal** to read and upload the data to RStudio (see provided code). 
+> Start this tutorial by downloading the example EX1 [here](https://drive.google.com/file/d/1FTdbrp-_SE81vUoQv4wBsqVGqkUUUaPR/view?usp=sharing) and the field boundary [here](https://drive.google.com/file/d/1pP41HiG2RxF7HOu_5fdj6Pg9DoTaLPcy/view?usp=sharing). This tutorial will use the function *`vect()`* from package **terra** to read and upload the data to RStudio (see provided code). 
 
 > EX1 is a yield map from a soybean field, stored as a point shapefile. Yield monitor observations were originally collected in the north-central US using a combine yield monitor, and observations were geographically shifted to protect the landowner’s privacy. This data set include three attributes:
 >   * Speed (miles per hour): speed of the combine at the time the observation was recorded
@@ -522,8 +522,7 @@ EX1.SD<-sdField(field = EX1,
 
 # General packages 
 library(cleanRfield)
-library(raster)
-library(rgdal)
+library(terra)
 
 # Required packages
 library(parallel)
@@ -708,12 +707,12 @@ ggplot() +
 
 #### 11. Saving files
 
-* This example code uses the function `writeOGR()` from the **rgdal** package to save "SpatialPointsDataFrames" and the function `shapefile` from the **raster** package to save "SpatialPolygon" objects. 
+* This example code uses the function `writeVector()` from the **terra** package to save "SpatVecor".
 
 ```r
 library(terra)
 
-# New filtered data (SpatialPointsDataFrames):
+# New filtered data (SpatVector):
 writeVector(EX1.B$newField, "EX1.newField.shp", filetype="ESRI Shapefile") 
 EX1.newField <- vect("EX1.newField.shp") # Reading the saved data points. 
 ```

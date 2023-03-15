@@ -83,10 +83,10 @@ library(cleanRfield)
 
 par(mfrow=c(1,2))
 
-EX1<-vect("EX1/EX1.shp")
+EX1<-vect("EX1.shp")
 plot(EX1, main="Data Point")
 
-EX1.Shape<-vect("EX1_boundary/EX1_boundary.shp")
+EX1.Shape<-vect("EX1_boundary.shp")
 plot(EX1.Shape, main="Field Boundary")
 
 par(mfrow=c(1,1))
@@ -768,8 +768,8 @@ library(sp) # used to prepare the raster grid with spsample function
 library(tmap) # used for visualization
 
 #### preparing the yield data ####
-EX1 <- vect("EX1/EX1.shp") # EX1.shp download link is in tutorial section 1 
-EX1.Shape <- vect("EX1_boundary/EX1_boundary.shp") #EX1_boundary.shp download link is in tutorial section 1  
+EX1 <- vect("EX1.shp") # EX1.shp download link is in tutorial section 1 
+EX1.Shape <- vect("EX1_boundary.shp") #EX1_boundary.shp download link is in tutorial section 1  
 
 # filtering data to remove biologically unlikely soybean yield observations and NA values
 EX1.F <- filterField(field = EX1,
@@ -798,8 +798,8 @@ proj4string(G) # checking that G is projected
 Yield.idw <- gstat::idw(Dry_Yield ~ 1, EX1_merc, newdata=G, idp=2.0)
 
 #### visualizing IDW interpolation ####
-r.idw <- raster(Yield.idw) # convert the IDW model to a RasterStack
-r.masked <- mask(r.idw, EX1.Shape_merc) # mask the raster to the field boundary
+r.idw <- raster::raster(Yield.idw) # convert the IDW model to a RasterStack
+r.masked <- raster::mask(r.idw, EX1.Shape_merc) # mask the raster to the field boundary
 
 yieldmap.idw <- tm_shape(r.masked) + #make the map using functions from the tmap library
   tm_raster(n=10,palette = "YlGn", 
@@ -827,8 +827,8 @@ library(sp) # used to prepare the raster grid with spsample function
 library(tmap) # used for visualization
 
 #### preparing the yield data ####
-EX1 <- vect("EX1/EX1.shp") # EX1.shp download link is in tutorial section 1 
-EX1.Shape <- vect("EX1_boundary/EX1_boundary.shp") #EX1_boundary.shp download link is in tutorial section 1  
+EX1 <- vect("EX1.shp") # EX1.shp download link is in tutorial section 1 
+EX1.Shape <- vect("EX1_boundary.shp") #EX1_boundary.shp download link is in tutorial section 1  
 
 # filtering data to remove biologically unlikely soybean yield observations and NA values
 EX1.F <- filterField(field = EX1,
